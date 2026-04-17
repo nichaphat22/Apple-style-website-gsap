@@ -8,66 +8,69 @@ import {
 } from "../constants/index.js";
 import { useMediaQuery } from "react-responsive";
 
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+gsap.registerPlugin(ScrollTrigger);
 
 const Performance = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 1024px)" });
   const sectionRef = useRef(null);
 
-  useGSAP(() => {
-    // Text animation - fade in and move up on scroll
-    gsap.fromTo(
-      ".content p",
-      { opacity: 0, y: 10 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power2.out",
+  useGSAP(
+    () => {
+      // Text animation - fade in and move up on scroll
+      gsap.fromTo(
+        ".content p",
+        { opacity: 0, y: 10 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: ".content p",
+            start: "top bottom",
+            end: "top center",
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
+        },
+      );
+
+      if (isMobile) return;
+      // Image timeline - only on desktop
+      const tl = gsap.timeline({
+        defaults: { ease: "power1.inOut", duration: 2, overwrite: "auto" },
         scrollTrigger: {
-          trigger: ".content p",
+          trigger: sectionRef.current,
           start: "top bottom",
-          end: "top center",
+          end: "center center",
           scrub: true,
           invalidateOnRefresh: true,
         },
-      },
-    );
+      });
 
-    if (isMobile) return;
-    // Image timeline - only on desktop
-    const tl = gsap.timeline({
-      defaults: { ease: "power1.inOut", duration: 2, overwrite: "auto" },
-      scrollTrigger: {
-        trigger: sectionRef.current,
-        start: "top bottom",
-        end: "center center",
-        scrub: true,
-        invalidateOnRefresh: true,
-      },
-    });
+      performanceImgPositions.forEach((pos) => {
+        if (pos.id === "p5") {
+          // p5 แสดง static ไม่มี animation
+          gsap.set(".p5", { autoAlpha: 1 });
+          return;
+        }
+        gsap.set(`.${pos.id}`, { y: 100, autoAlpha: 0 });
 
-    performanceImgPositions.forEach((pos) => {
-       if (pos.id === "p5") {
-        // p5 แสดง static ไม่มี animation
-        gsap.set(".p5", { autoAlpha: 1 });
-        return;
-      }
-      gsap.set(`.${pos.id}`, { y: 100, autoAlpha: 0 });
+        const toVars = { y: 0, autoAlpha: 1 };
+        if (pos.left !== undefined) toVars.left = `${pos.left}%`;
+        if (pos.right !== undefined) toVars.right = `${pos.right}%`;
+        if (pos.bottom !== undefined) toVars.bottom = `${pos.bottom}%`;
+        if (pos.transform !== undefined) toVars.transform = pos.transform;
 
-      const toVars = { y: 0, autoAlpha: 1 };
-      if (pos.left !== undefined) toVars.left = `${pos.left}%`;
-      if (pos.right !== undefined) toVars.right = `${pos.right}%`;
-      if (pos.bottom !== undefined) toVars.bottom = `${pos.bottom}%`;
-      if (pos.transform !== undefined) toVars.transform = pos.transform;
-
-      tl.to(`.${pos.id}`, toVars, 0);
-    });
-    return () => {
-      tl.scrollTrigger && tl.scrollTrigger.kill();
-      tl.kill();
-    };
-  },{ scope: sectionRef, dependencies: [isMobile] });
+        tl.to(`.${pos.id}`, toVars, 0);
+      });
+      return () => {
+        tl.scrollTrigger && tl.scrollTrigger.kill();
+        tl.kill();
+      };
+    },
+    { scope: sectionRef, dependencies: [isMobile] },
+  );
 
   return (
     <section id="performance" ref={sectionRef}>
@@ -80,12 +83,11 @@ const Performance = () => {
             className={id}
             src={src}
             alt={id}
-            style={{ opacity: isMobile ? 1 : 0 }}
           />
         ))}
       </div>
 
-      <div className="content performance-content">
+      <div className="content">
         <p>
           Run the latest games with up to 8K resolution, or connect to an
           external display with up to 6K resolution.{" "}
